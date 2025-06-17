@@ -58,6 +58,12 @@
   
     async function flushPendingRequests() {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (stored.length === 0) return;
+
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = "🔄 Syncing offline data...";
+      statusDiv.style.color = "blue";
+
       const remaining = [];
   
       for (const url of stored) {
@@ -67,15 +73,28 @@
   
       if (remaining.length > 0) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
+        statusDiv.textContent = `⚠️ ${remaining.length} requests still pending`;
+        statusDiv.style.color = "orange";
       } else {
         localStorage.removeItem(STORAGE_KEY);
+        statusDiv.textContent = "✅ All offline data synced!";
+        statusDiv.style.color = "green";
       }
     }
+
+    // Check online status periodically
+    setInterval(() => {
+      if (navigator.onLine) {
+        flushPendingRequests();
+      }
+    }, 30000); // Check every 30 seconds
   
     window.addEventListener('online', flushPendingRequests);
     window.addEventListener('load', () => {
       if (!navigator.onLine) {
-        alert("You appear to be offline. Some features may be unavailable until your first online visit.");
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = "⚠️ You are offline. Data will be saved locally.";
+        statusDiv.style.color = "orange";
       } else {
         flushPendingRequests();
       }
