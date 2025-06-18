@@ -45,6 +45,7 @@
 
   <script>
     const STORAGE_KEY = 'pending-requests';
+    let isSyncing = false;  // Add sync lock
   
     function saveRequestLocally(url, id) {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -62,8 +63,14 @@
     }
   
     async function flushPendingRequests() {
+      if (isSyncing) return;  // Prevent concurrent syncs
+      isSyncing = true;
+      
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      if (stored.length === 0) return;
+      if (stored.length === 0) {
+        isSyncing = false;
+        return;
+      }
 
       const statusDiv = document.getElementById('status');
       statusDiv.textContent = "🔄 Syncing offline data...";
@@ -90,6 +97,8 @@
         statusDiv.textContent = "✅ All offline data synced!";
         statusDiv.style.color = "green";
       }
+      
+      isSyncing = false;  // Release sync lock
     }
 
     // Check online status periodically
